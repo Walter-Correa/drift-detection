@@ -21,20 +21,20 @@ public OnPlayerCommandText(playerid, cmdtext[])
 }
 public OnPlayerDriftStart(playerid)
 {
-	GameTextForPlayer(playerid, "~g~Drift Started!", 1000, 6);
+	GameTextForPlayer(playerid, "~g~Drift Started!", 1000, 4);
 	return true;
 }
-public OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed)
+public OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed, Float: distance, time)
 {
 	new message[128];
 	format(message, sizeof message, "~g~Drifting!!~n~~b~Angle:~r~ %0.1f~n~~b~Speed: ~r~%0.1f", drift_angle, speed);
-	GameTextForPlayer(playerid, message, 1000, 6);
+	GameTextForPlayer(playerid, message, 3000, 4);
 	return true;
 }
 public OnPlayerDriftEnd(playerid, reason, Float: distance, time)
 {
 	new message[128];
-	format(message, sizeof message, "~g~Drift End!!~n~~b~Reason: ~r~%i~n~~b~Distance:~r~ %0.1f~n~~b~Time: ~r~%d", reason, distance, time / 1000);
-	GameTextForPlayer(playerid, message, 1000, 6);
-	return true; 
+	format(message, sizeof message, "~g~Drift End!!~n~~b~Reason:~r~ %d~n~~b~Distance:~r~ %0.1f~n~~b~Time: ~r~%d", reason, distance, time / 1000);
+	GameTextForPlayer(playerid, message, 3000, 4);
+	return true;
 }
