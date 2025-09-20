@@ -68,7 +68,7 @@ enum e_DRIFT_PLAYER_STRUCT {
 #endif 
 
 #if defined OnPlayerDriftUpdate
-    forward	OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed);
+    forward	OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed, Float: distance, time);
 #endif
 
 #if defined OnPlayerDriftEnd
@@ -99,7 +99,7 @@ public OnPlayerUpdate(playerid)
 {
     if(g_DriftFlags & DRIFT_CHECK_ENABLED && g_DriftPlayers[playerid][playerFlags] & DRIFT_CHECK_ENABLED)
     {
-        if(GetTickCount() > g_DriftPlayers[playerid][lastTimestamp])
+        if(tickcount() > g_DriftPlayers[playerid][lastTimestamp])
         {
             new vehicleID = GetPlayerVehicleID(playerid);
             if(vehicleID && GetPlayerState(playerid) == PLAYER_STATE_DRIVER && IsModelACar(GetVehicleModel(vehicleID)))
@@ -134,7 +134,7 @@ public OnPlayerUpdate(playerid)
                         if(g_MinDriftAngle <= driftAngle <= MAX_DRIFT_ANGLE && speed >= g_MinDriftSpeed)
                         {                        
                             g_DriftPlayers[playerid][driftState] = DRIFT_STATE_DRIFTING;
-                            g_DriftPlayers[playerid][startTimestamp] = GetTickCount();
+                            g_DriftPlayers[playerid][startTimestamp] = tickcount();
 
                             GetVehicleHealth(vehicleID, g_DriftPlayers[playerid][vHealth]);
                             GetPlayerPos(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
@@ -162,7 +162,7 @@ public OnPlayerUpdate(playerid)
                                     new Float: distance;
                                     distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
 
-                                    OnPlayerDriftEnd(playerid, DRIFT_END_REASON_DAMAGED, distance, GetTickCount() - g_DriftPlayers[playerid][startTimestamp]);
+                                    OnPlayerDriftEnd(playerid, DRIFT_END_REASON_DAMAGED, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
                                 #endif
                             }
                         }
@@ -171,7 +171,10 @@ public OnPlayerUpdate(playerid)
                             g_DriftPlayers[playerid][timeoutTicks] = 0;
                             
                             #if defined OnPlayerDriftUpdate
-                                OnPlayerDriftUpdate(playerid, driftAngle, speed);
+								new Float: distance;
+								distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
+                                
+								OnPlayerDriftUpdate(playerid, driftAngle, speed, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
                             #endif
                         }
                         else
@@ -189,14 +192,14 @@ public OnPlayerUpdate(playerid)
                                     new Float: distance;
                                     distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
 
-                                    OnPlayerDriftEnd(playerid, DRIFT_END_REASON_TIMEOUT, distance, GetTickCount() - g_DriftPlayers[playerid][startTimestamp]);
+                                    OnPlayerDriftEnd(playerid, DRIFT_END_REASON_TIMEOUT, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
                                 #endif
                             }
                         }
                     }
                 }
             }
-            g_DriftPlayers[playerid][lastTimestamp] = GetTickCount() + DRIFT_PROCESS_INTERVAL;
+            g_DriftPlayers[playerid][lastTimestamp] = tickcount() + DRIFT_PROCESS_INTERVAL;
         }
     }
     #if defined Drift_OnPlayerUpdate
@@ -219,7 +222,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
             new Float: distance;
             distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
 
-            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_OTHER, distance, GetTickCount() - g_DriftPlayers[playerid][startTimestamp]);
+            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_OTHER, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
         #endif
     }
 
@@ -244,11 +247,38 @@ public OnPlayerDisconnect(playerid, reason)
             new Float: distance;
             distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
 
-            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_OTHER, distance, GetTickCount() - g_DriftPlayers[playerid][startTimestamp]);
+            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_OTHER, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
         #endif
     }
     #if defined Drift_OnPlayerDisconnect
         return Drift_OnPlayerDisconnect(playerid, reason);
+    #else
+        return true;
+    #endif
+}
+
+public OnVehicleDamageStatusUpdate(vehicleid, playerid)
+{
+	if(g_DriftPlayers[playerid][driftState] == DRIFT_STATE_DRIFTING)
+    {
+		if(g_DriftFlags & DAMAGE_CHECK_ENABLED && g_DriftPlayers[playerid][playerFlags] & DAMAGE_CHECK_ENABLED)
+		{
+			new Float: pX, Float: pY, Float: pZ;
+			GetPlayerPos(playerid, pX, pY, pZ);
+
+			g_DriftPlayers[playerid][driftState] = DRIFT_STATE_NONE;
+			g_DriftPlayers[playerid][timeoutTicks] = 0;
+
+			#if defined OnPlayerDriftEnd
+				new Float: distance;
+				distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
+			
+				OnPlayerDriftEnd(playerid, DRIFT_END_REASON_DAMAGED, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
+			#endif
+		}
+    }
+    #if defined Drift_OnVehicleDamageStatusUpd
+        return Drift_OnVehicleDamageStatusUpd(vehicleid, playerid);
     #else
         return true;
     #endif
@@ -334,6 +364,17 @@ stock bool: Drift::IsPlayerDrifting(playerid)
 {
     return !!g_DriftPlayers[playerid][driftState];
 }
+
+#if defined _ALS_OnVehicleDamageStatusUpd
+    #undef OnVehicleDamageStatusUpdate
+#else
+    #define _ALS_OnVehicleDamageStatusUpd
+#endif
+
+#define OnVehicleDamageStatusUpdate Drift_OnVehicleDamageStatusUpd
+#if defined Drift_OnVehicleDamageStatusUpd
+    forward Drift_OnVehicleDamageStatusUpd(vehicleid, playerid);
+#endif
 
 #if defined _ALS_OnPlayerDisconnect
     #undef OnPlayerDisconnect
