@@ -42,7 +42,7 @@ bool: Drift::IsPlayerDrifting(playerid);
 
 ```pawn
 forward	OnPlayerDriftStart(playerid);
-forward	OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed);
+forward	OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed, Float: distance, time);
 forward	OnPlayerDriftEnd(playerid, reason, Float: distance, time);
 ```
 
