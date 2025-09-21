@@ -32,7 +32,8 @@
 enum {
     DRIFT_END_REASON_TIMEOUT, 
     DRIFT_END_REASON_DAMAGED, 
-    DRIFT_END_REASON_OTHER 
+    DRIFT_END_REASON_OTHER,
+	DRIFT_END_REASON_CANCELED
 }
 // drift states
 enum {
@@ -363,6 +364,24 @@ stock bool: Drift::IsDamageCheckEnabled(playerid = -1)
 stock bool: Drift::IsPlayerDrifting(playerid)
 {
     return !!g_DriftPlayers[playerid][driftState];
+}
+stock Drift::CancelPlayerDrift(playerid)
+{
+    if(g_DriftPlayers[playerid][driftState] == DRIFT_STATE_DRIFTING)
+    {
+        new Float: pX, Float: pY, Float: pZ;
+        GetPlayerPos(playerid, pX, pY, pZ);
+                
+        g_DriftPlayers[playerid][driftState] = DRIFT_STATE_NONE;
+        g_DriftPlayers[playerid][timeoutTicks] = 0;   
+
+        #if defined OnPlayerDriftEnd
+            new Float: distance;
+            distance = GetPlayerDistanceFromPoint(playerid, g_DriftPlayers[playerid][startPosX], g_DriftPlayers[playerid][startPosY], g_DriftPlayers[playerid][startPosZ]);
+
+            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_CANCELED, distance, tickcount() - g_DriftPlayers[playerid][startTimestamp]);
+        #endif
+    }
 }
 
 #if defined _ALS_OnVehicleDamageStatusUpd
