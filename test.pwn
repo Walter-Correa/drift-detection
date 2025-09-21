@@ -34,7 +34,7 @@ public OnPlayerDriftUpdate(playerid, Float: drift_angle, Float: speed, Float: di
 public OnPlayerDriftEnd(playerid, reason, Float: distance, time)
 {
 	new message[128];
-	format(message, sizeof message, "~g~Drift End!!~n~~b~Reason:~r~ %d~n~~b~Distance:~r~ %0.1f~n~~b~Time: ~r~%d", reason, distance, time / 1000);
+	format(message, sizeof message, "~g~Drift End!!~n~~b~Reason:~r~ %d~n~~b~Distance:~r~ %0.1f~n~~b~Time: ~r~%d", reason, distance, time);
 	GameTextForPlayer(playerid, message, 3000, 4);
 	return true;
 }
