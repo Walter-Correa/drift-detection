@@ -249,27 +249,6 @@ public OnPlayerDisconnect(playerid, reason)
     #endif
 }
 
-public OnVehicleDamageStatusUpdate(vehicleid, playerid)
-{
-	if(g_DriftPlayers[playerid][driftState] == DRIFT_STATE_DRIFTING)
-    {
-		if(g_DriftFlags & DAMAGE_CHECK_ENABLED && g_DriftPlayers[playerid][playerFlags] & DAMAGE_CHECK_ENABLED)
-		{
-			g_DriftPlayers[playerid][driftState] = DRIFT_STATE_NONE;
-			g_DriftPlayers[playerid][timeoutTicks] = 0;
-
-			#if defined OnPlayerDriftEnd
-				OnPlayerDriftEnd(playerid, DRIFT_END_REASON_DAMAGED, g_DriftPlayers[playerid][driftDistance], g_DriftPlayers[playerid][driftTime]);
-			#endif
-		}
-    }
-    #if defined Drift_OnVehicleDamageStatusUpd
-        return Drift_OnVehicleDamageStatusUpd(vehicleid, playerid);
-    #else
-        return true;
-    #endif
-}
-
 // option functions
 stock Drift::SetMinAngle(Float: angle)
 {
@@ -362,17 +341,6 @@ stock Drift::CancelPlayerDrift(playerid)
         #endif
     }
 }
-
-#if defined _ALS_OnVehicleDamageStatusUpd
-    #undef OnVehicleDamageStatusUpdate
-#else
-    #define _ALS_OnVehicleDamageStatusUpd
-#endif
-
-#define OnVehicleDamageStatusUpdate Drift_OnVehicleDamageStatusUpd
-#if defined Drift_OnVehicleDamageStatusUpd
-    forward Drift_OnVehicleDamageStatusUpd(vehicleid, playerid);
-#endif
 
 #if defined _ALS_OnPlayerDisconnect
     #undef OnPlayerDisconnect
