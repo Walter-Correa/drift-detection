@@ -38,7 +38,8 @@ enum {
 // drift states
 enum {
     DRIFT_STATE_NONE,
-    DRIFT_STATE_DRIFTING
+    DRIFT_STATE_DRIFTING,
+	DRIFT_STATE_CANCELED
 }
 
 // option flags
@@ -107,6 +108,21 @@ public OnPlayerUpdate(playerid)
         if(tickcount() > g_DriftPlayers[playerid][lastTimestamp])
         {
             new vehicleID = GetPlayerVehicleID(playerid);
+			if(g_DriftPlayers[playerid][driftState] == DRIFT_STATE_CANCELED)
+			{
+				g_DriftPlayers[playerid][driftState] = DRIFT_STATE_NONE;
+                g_DriftPlayers[playerid][timeoutTicks] = 0;
+								
+				#if defined OnPlayerDriftEnd
+					OnPlayerDriftEnd(playerid, DRIFT_END_REASON_CANCELED, g_DriftPlayers[playerid][driftDistance], g_DriftPlayers[playerid][driftTime]);
+				#endif
+				
+				#if defined Drift_OnPlayerUpdate
+					return Drift_OnPlayerUpdate(playerid);
+				#else
+					return true;
+				#endif
+			}
             if(vehicleID && GetPlayerState(playerid) == PLAYER_STATE_DRIVER && IsModelACar(GetVehicleModel(vehicleID)))
             {
                 new Float: vX, Float: vY, Float: vZ;
@@ -333,13 +349,10 @@ stock Drift::CancelPlayerDrift(playerid)
 {
     if(g_DriftPlayers[playerid][driftState] == DRIFT_STATE_DRIFTING)
     {  
-        g_DriftPlayers[playerid][driftState] = DRIFT_STATE_NONE;
+        g_DriftPlayers[playerid][driftState] = DRIFT_STATE_CANCELED;
         g_DriftPlayers[playerid][timeoutTicks] = 0;   
-
-        #if defined OnPlayerDriftEnd
-            OnPlayerDriftEnd(playerid, DRIFT_END_REASON_CANCELED, g_DriftPlayers[playerid][driftDistance], g_DriftPlayers[playerid][driftTime]);
-        #endif
     }
+	return true;
 }
 
 #if defined _ALS_OnPlayerDisconnect
